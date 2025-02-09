@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGDAM STORE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+        }
+
+        .left {
+            width: 60%;
+        }
+
+        .right {
+            width: 35%;
+            background-color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        #productList div {
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        #chatBox {
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #fff;
+        }
+
+        #chatInput {
+            width: 80%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
+        #sendBtn {
+            width: 18%;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+            border: none;
+        }
+
+        .chat-message {
+            padding: 5px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .chat-message span {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>AGDAM STORE</h1>
+</header>
+
+<div class="container">
+    <!-- Ürün Ekleme ve Listeleme -->
+    <div class="left">
+        <h2>Ürün Ekle</h2>
+        <input type="text" id="productName" placeholder="Ürün Adı">
+        <input type="file" id="productImage">
+        <button onclick="addProduct()">Ürün Ekle</button>
+
+        <h2>Ürün Listesi</h2>
+        <div id="productList"></div>
+    </div>
+
+    <!-- Chat Sistemi -->
+    <div class="right">
+        <h2>Chat Sistemi</h2>
+        <div id="chatBox"></div>
+        <input type="text" id="chatInput" placeholder="Mesaj yaz...">
+        <button id="sendBtn" onclick="sendMessage()">Gönder</button>
+    </div>
+</div>
+
+<script>
+// Ürün Ekleme Fonksiyonu
+async function addProduct() {
+    const name = document.getElementById('productName').value;
+    const image = document.getElementById('productImage').files[0];
+
+    const reader = new FileReader();
+    reader.onloadend = async function() {
+        const base64Image = reader.result;
+
+        const response = await fetch('http://localhost:5000/add-product', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                name: name,
+                image: base64Image,
+            }),
+        });
+
+        if (response.ok) {
+            alert("Ürün başarıyla eklendi");
+            fetchProducts();  // Ürünleri yeniden listele
+        }
+    };
+    reader.readAsDataURL(image);
+}
+
+// Ürünleri Listeleme Fonksiyonu
+async function fetchProducts() {
+    const response = await fetch('http://localhost:5000/products');
+    const products = await response.json();
+    const productList = document.getElementById('productList');
+    productList.innerHTML = '';  // Önceki ürünleri temizle
+
+    products.forEach(product => {
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${product.name}</h3><img src="${product.image}" width="100">`;
+        productList.appendChild(div);
+    });
+}
+
+// Sayfa yüklendiğinde ürünleri getir
+window.onload = fetchProducts;
+
+// Chat Sistemi
+
+let chatMessages = [];  // Mesajları saklamak için bir dizi
+
+// Mesaj gönderme fonksiyonu
+function sendMessage() {
+    const messageInput = document.getElementById('chatInput');
+    const message = messageInput.value;
+
+    if (message.trim()) {
+        chatMessages.push(message);
+        updateChatBox();
+        messageInput.value = '';  // Mesaj kutusunu temizle
+    }
+}
+
+// Chat kutusunu güncelleme fonksiyonu
+function updateChatBox() {
+    const chatBox = document.getElementById('chatBox');
+    chatBox.innerHTML = '';  // Önceki mesajları temizle
+
+    chatMessages.forEach(msg => {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('chat-message');
+        messageElement.innerHTML = `<span>Bir Kullanıcı:</span> ${msg}`;
+        chatBox.appendChild(messageElement);
+    });
+
+    // Scroll'u en alta kaydırma
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+</script>
+
+</body>
+</html>
